@@ -18,5 +18,4 @@ PLACEHOLDER = '_'
 DIRECTIONS = ((0,-1,1), (1,-1,0), (1,0,-1), (0,1,-1), (-1,1,0), (-1,0,1))
 E_WORD_TOO_LONG = 'Nii pikk sõna ei mahu ära'
 
-tiling = Tiling(3)
-print(Tiling)
+tiling = Tiling(2)
