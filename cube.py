@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+from random import randint, shuffle, sample, choice
+
 DIRECTIONS = {
     "xy": {"dx": +1, "dy": -1, "dz":  0},
     "xz": {"dx": +1, "dy":  0, "dz": -1},
@@ -51,8 +54,11 @@ class Cube:
     def max_word_length(self, radius):
         return (radius + 1) + self.abs_max - self.abs_min # 
 
-    def write(self, letter):
-        self.__letter = letter
+    def engrave(self, dir, word):
+        print('engraving', word, 'to', dir)
+        self.__letter = word[0]
+        if len(word) > 1:
+            self.links[dir].engrave(dir, word[1:])
 
 
     def link(self, dir_label, other_cube):
@@ -99,37 +105,37 @@ class Tiling:
         self.radius = radius
         self.cubes = {}
         centerCube = self.cubes.setdefault((0, 0, 0), Cube(0, 0, 0))
-        centerCube.write('o')
         centerCube.grow(self.cubes, self.radius)
     
     def __str__(self):
-        coords = [coord for coord in self.cubes]
+        coords = [(coord, self.cubes[coord].letter) for coord in self.cubes]
         return str(coords)
     
-    def max_word_length(self, cube):
-        return (self.radius + 1) + cube.abs_max - cube.abs_min # 
+    def max_word_length(self, cube, direction=None):
+        if direction:
+            # print(cube, direction)
+            max_x = 2*self.radius+1 if direction['dx'] == 0 else abs(direction['dx'] * self.radius - cube.x) + 1
+            max_y = 2*self.radius+1 if direction['dy'] == 0 else abs(direction['dy'] * self.radius - cube.y) + 1
+            max_z = 2*self.radius+1 if direction['dz'] == 0 else abs(direction['dz'] * self.radius - cube.z) + 1
+            return min(max_x, max_y, max_z)
+        else:
+            return (self.radius + 1) + cube.abs_max - cube.abs_min # 
+
+    def engrave(self, word, hint=None):
+        print('engraving "', word, '"')
+        cubes = list(self.cubes.values())
+        shuffle(cubes)
+        for cube in cubes:
+            print('\nTry', cube)
+            if self.max_word_length(cube) < len(word):
+                continue
+            directions = list(DIRECTIONS.items())
+            shuffle(directions)
+            for dir_label, direction in directions:
+                max_word_length = self.max_word_length(cube, direction)
+                if max_word_length < len(word):
+                    continue
+                cube.engrave(dir_label, word)
+                return
 
 
-# -2  0  2
-# -2  1  1
-# -2  2  0
-
-# -1 -1  2
-# -1  0  1
-# -1  1  0
-# -1  2 -1
-
-#  0 -2  2
-#  0 -1  1
-#  0  0  0
-#  0  1 -1
-#  0  2 -2
-
-#  1 -2  1
-#  1 -1  0
-#  1  0 -1
-#  1  1 -2
-
-#  2 -2  0
-#  2 -1 -1
-#  2  0 -2

@@ -18,5 +18,6 @@ PLACEHOLDER = '_'
 DIRECTIONS = ((0,-1,1), (1,-1,0), (1,0,-1), (0,1,-1), (-1,1,0), (-1,0,1))
 E_WORD_TOO_LONG = 'Nii pikk sõna ei mahu ära'
 
-tiling = Tiling(17)
+tiling = Tiling(2)
+tiling.engrave('bars')
 print(tiling)
