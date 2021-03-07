@@ -14,7 +14,7 @@ from cube import Tiling
 
 MINWORDS, MAXTRY, RADIUS, RETRY_COUNT = 10, 100, 5, 1000
 
-BOOKLET_PAGES = 2
+BOOKLET_PAGES = 3
 BOOKLET_TITLE = 'segadik'
 PDF_GRID_CENTER = 21 / 2 * cm
 PDF_HEX_SIDE_LEN = 4.3 / RADIUS * cm
@@ -47,33 +47,58 @@ def new_words():
     shuffle(words)
     return words
 
-tiling = Tiling(RADIUS)
-words = new_words()
-for word in words:
-    tiling.engrave(word)
-
 def cartesian(hex):
     r, g, b = hex
     x = sqrt(3) * (b / 2 + r) * PDF_HEX_SIDE_LEN + PDF_GRID_CENTER
     y = PDF_TOP - PDF_GRID_CENTER - PDF_MARGIN - 3 / 2 * b * PDF_HEX_SIDE_LEN
     return (x, y)
-# PDF_LEFT = cartesian((- RADIUS, RADIUS, 0))[0]
-tiles = tiling.tiles
-print(tiles)
-print(tiling.words)
 
 
 canvas = Canvas('booklet_' + BOOKLET_TITLE + '.pdf', pagesize=A4)
-canvas.setFont("Times-Roman", 12)
-canvas.drawString(1 * cm, PDF_TOP - 1 * cm, 'Micheleki sõnaheksadix, 2021   ' + str(1) + '/' + str(BOOKLET_PAGES))
 
-canvas.setFont("Courier", PDF_FONT_SIZE)
+for pagenr in range(BOOKLET_PAGES   ):
+    tiling = Tiling(RADIUS)
+    words = new_words()
+    for word in words:
+        tiling.engrave(word)
 
-for (coords, letter) in tiles.items():
-    cart = cartesian(coords)
-    x, y = cart
-    canvas.drawString(x, y, letter.upper())
-    # print(coords, letter, cart)
+    tiles = tiling.tiles
+    canvas.setFont("Times-Roman", 12)
+    canvas.drawString(1 * cm, PDF_TOP - 1 * cm, 'Micheleki sõnaheksadix, 2021   ' + str(pagenr) + '/' + str(BOOKLET_PAGES))
 
-canvas.showPage() # saves a page to PDF and gets ready for a new one
+    canvas.setFont("Courier", PDF_FONT_SIZE)
+    for (coords, letter) in tiles.items():
+        cart = cartesian(coords)
+        x, y = cart
+        canvas.drawString(x, y, letter.upper())
+        # print(coords, letter, cart)
+
+    canvas.setFont("Courier", PDF_FONT_SIZE / 1.2)
+    first_line_y = 8 * cm
+    max_letters_on_line = (RADIUS * 4 + 1) * 1.2
+    letters_on_line = 0
+    line_nr = 0
+    words_on_line = ''
+
+    lines = []
+    line = ''
+    # lines.append(line)
+    for (word, hint) in tiling.words:
+        print(word)
+        if len(line) == 0:
+            line += word
+        elif len(line) + 2 + len(word) > max_letters_on_line:
+            lines.append(line)
+            line = word
+            line_nr += 1
+        else:
+            line += '  ' + word
+    lines.append(line)
+
+    for ix, line in enumerate(lines):
+        print(ix, line)
+        canvas.drawString(PDF_LEFT, first_line_y - ix/1.2 * cm, line)
+
+    canvas.showPage() # saves a page to PDF and gets ready for a new one
+
 canvas.save()
