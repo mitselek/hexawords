@@ -12,7 +12,7 @@ from reportlab.pdfgen.canvas import Canvas
 
 from cube import Tiling
 
-MINWORDS, MAXTRY, WORDLENGTH, RADIUS, RETRY_COUNT = 10, 100, 6, 6, 1000
+MINWORDS, MAXTRY, RADIUS, RETRY_COUNT = 10, 100, 5, 1000
 
 BOOKLET_PAGES = 2
 BOOKLET_TITLE = 'segadik'
@@ -26,8 +26,7 @@ PDF_LEFT = PDF_GRID_CENTER - sqrt(3) * RADIUS * PDF_HEX_SIDE_LEN
 DIRECTIONS = ((0,-1,1), (1,-1,0), (1,0,-1), (0,1,-1), (-1,1,0), (-1,0,1))
 
 WORDPOOL_INGREDIENTS = [
-    {'size': 22, 're': '[KPTGBD][AEIOUÕÜÄÖ][KPTGBD][AEIOUÕÜÄÖ][KPTGBD]'},
-    {'size': 22, 're': '[AEIOUÕÜÄÖ][KPTGBD][AEIOUÕÜÄÖ][AEIOUÕÜÄÖ]'}
+    {'size': 22000, 're': '[ÕÜÄÖ]'},
 ]
 
 MIN_WORD_LENGTH = min(4, RADIUS + 1)
@@ -61,6 +60,7 @@ def cartesian(hex):
 # PDF_LEFT = cartesian((- RADIUS, RADIUS, 0))[0]
 tiles = tiling.tiles
 print(tiles)
+print(tiling.words)
 
 
 canvas = Canvas('booklet_' + BOOKLET_TITLE + '.pdf', pagesize=A4)
@@ -73,8 +73,7 @@ for (coords, letter) in tiles.items():
     cart = cartesian(coords)
     x, y = cart
     canvas.drawString(x, y, letter.upper())
-
-    print(coords, letter, cart)
+    # print(coords, letter, cart)
 
 canvas.showPage() # saves a page to PDF and gets ready for a new one
 canvas.save()

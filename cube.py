@@ -65,10 +65,13 @@ class Cube:
         return (radius + 1) + self.abs_max - self.abs_min  #
 
     def engrave(self, dir, word):
-        # print('engraving', word, 'to', dir, self)
-        self.__letter = word[0]
+        if self.__letter not in (PLACEHOLDER, word[0]):
+            # print(word[0], 'cant fit to', self.__letter)
+            return False
         if len(word) > 1:
-            return self.links[dir].engrave(dir, word[1:])
+            if self.links[dir].engrave(dir, word[1:]) == False:
+                return False
+        self.__letter = word[0]
         return True
 
     def link(self, dir_label, other_cube):
