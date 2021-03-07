@@ -4,25 +4,26 @@ from random import randint, shuffle, sample, choice
 import json
 
 DIRECTIONS = {
-    "xy": {"dx": +1, "dy": -1, "dz": 0},
-    "xz": {"dx": +1, "dy": 0, "dz": -1},
-    "yz": {"dx": 0, "dy": +1, "dz": -1},
-    "yx": {"dx": -1, "dy": +1, "dz": 0},
-    "zx": {"dx": -1, "dy": 0, "dz": +1},
-    "zy": {"dx": 0, "dy": -1, "dz": +1}
+    "rg": {"dr": +1, "dg": -1, "db": 0},
+    "rb": {"dr": +1, "dg": 0, "db": -1},
+    "gb": {"dr": 0, "dg": +1, "db": -1},
+    "gr": {"dr": -1, "dg": +1, "db": 0},
+    "br": {"dr": -1, "dg": 0, "db": +1},
+    "bg": {"dr": 0, "dg": -1, "db": +1}
 }
+PLACEHOLDER = '-'
 
 
 class Cube:
-    def __init__(self, x, y, z):
-        self.__coords = {'x': x, 'y': y, 'z': z}
-        self.__letter = ''
+    def __init__(self, r, g, b):
+        self.__coords = {'r': r, 'g': g, 'b': b}
+        self.__letter = PLACEHOLDER
         self.__links = {}
         # print('New cube at', str(self))
 
     def __str__(self):
         return str({'coords': self.__coords, 'links': [(dir, cube.coords) for dir, cube in self.__links.items()]})
-        # return str(self.x) + ',' + str(self.y) + ',' + str(self.z)
+        # return str(self.r) + ',' + str(self.g) + ',' + str(self.b)
 
     @property
     def coords(self):
@@ -38,27 +39,27 @@ class Cube:
 
     @property
     def abs_min(self):
-        return min(abs(self.__coords['x']), abs(self.__coords['y']), abs(self.__coords['z']))
+        return min(abs(self.__coords['r']), abs(self.__coords['g']), abs(self.__coords['b']))
 
     @property
     def abs_max(self):
-        return max(abs(self.__coords['x']), abs(self.__coords['y']), abs(self.__coords['z']))
+        return max(abs(self.__coords['r']), abs(self.__coords['g']), abs(self.__coords['b']))
 
     @property
     def numlinks(self):
         return len(self.__links)
 
     @property
-    def x(self):
-        return self.__coords['x']
+    def r(self):
+        return self.__coords['r']
 
     @property
-    def y(self):
-        return self.__coords['y']
+    def g(self):
+        return self.__coords['g']
 
     @property
-    def z(self):
-        return self.__coords['z']
+    def b(self):
+        return self.__coords['b']
 
     def max_word_length(self, radius):
         return (radius + 1) + self.abs_max - self.abs_min  #
@@ -81,24 +82,24 @@ class Cube:
                 # print('already linked', 'to', dir_label)
                 continue
             # print('heading at', dir_label)
-            x = self.coords['x'] + direction['dx']
-            if abs(x) > radius:
+            r = self.coords['r'] + direction['dr']
+            if abs(r) > radius:
                 # print('|__ world is flat X',)
                 continue
-            y = self.coords['y'] + direction['dy']
-            if abs(y) > radius:
+            g = self.coords['g'] + direction['dg']
+            if abs(g) > radius:
                 # print('|__ world is flat Y',)
                 continue
-            z = self.coords['z'] + direction['dz']
-            if abs(z) > radius:
+            b = self.coords['b'] + direction['db']
+            if abs(b) > radius:
                 # print('|__ world is flat Z',)
                 continue
 
-            if (x, y, z) not in cubes:
-                cubes.setdefault((x, y, z), Cube(x, y, z))
+            if (r, g, b) not in cubes:
+                cubes.setdefault((r, g, b), Cube(r, g, b))
 
-            next_cube = cubes[(x, y, z)]
-            # print('linking', dir_label, 'with', (x, y, z))
+            next_cube = cubes[(r, g, b)]
+            # print('linking', dir_label, 'with', (x, y, b))
             self.link(dir_label=dir_label, other_cube=next_cube)
             cntr_dir_label = dir_label[1] + dir_label[0]
             next_cube.link(dir_label=cntr_dir_label, other_cube=self)
@@ -119,14 +120,7 @@ class Tiling:
 
     def __str__(self):
         coords = [
-            (
-                coord,
-                self.cubes[coord].letter,
-                # [
-                #     link
-                #     for link in self.cubes[coord].links.keys()
-                # ]
-            )
+            str(coord) + ': ' + self.cubes[coord].letter
             for coord in self.cubes
         ]
         return json.dumps(coords)
@@ -141,10 +135,10 @@ class Tiling:
     def max_word_length(self, cube, direction=None):
         if direction:
             # print(cube, direction)
-            max_x = 2 * self.radius + 1 if direction['dx'] == 0 else abs(direction['dx'] * self.radius - cube.x) + 1
-            max_y = 2 * self.radius + 1 if direction['dy'] == 0 else abs(direction['dy'] * self.radius - cube.y) + 1
-            max_z = 2 * self.radius + 1 if direction['dz'] == 0 else abs(direction['dz'] * self.radius - cube.z) + 1
-            maxlen = min(max_x, max_y, max_z)
+            max_r = 2 * self.radius + 1 if direction['dr'] == 0 else abs(direction['dr'] * self.radius - cube.r) + 1
+            max_g = 2 * self.radius + 1 if direction['dg'] == 0 else abs(direction['dg'] * self.radius - cube.g) + 1
+            max_b = 2 * self.radius + 1 if direction['db'] == 0 else abs(direction['db'] * self.radius - cube.b) + 1
+            maxlen = min(max_r, max_g, max_b)
             # print('maxlen', maxlen)
             return maxlen
         else:
