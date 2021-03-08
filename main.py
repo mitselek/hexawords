@@ -12,7 +12,7 @@ from reportlab.pdfgen.canvas import Canvas
 
 from cube import Tiling
 
-RADIUS = 3
+RADIUS = 4
 BOOKLET_PAGES = 1
 BOOKLET_TITLE = 'segadik'
 
@@ -26,7 +26,7 @@ PDF_LEFT = PDF_GRID_CENTER - sqrt(3) * RADIUS * PDF_HEX_SIDE_LEN
 DIRECTIONS = ((0,-1,1), (1,-1,0), (1,0,-1), (0,1,-1), (-1,1,0), (-1,0,1))
 
 WORDPOOL_INGREDIENTS = [
-    {'size': 15, 're': '[ÕÜÄÖ]'},
+    {'size': 0, 're': '[ÕÜÄÖ]'},
 ]
 
 MIN_WORD_LENGTH = min(4, RADIUS + 1)
@@ -62,11 +62,13 @@ for pagenr in range(BOOKLET_PAGES   ):
 
     tiling = Tiling(RADIUS)
     words = new_words()
-    print([word[0] for word in words])
+    print('All words:', [word[0] for word in words])
     canvas.setFont("Courier", 12)
     stat_line_nr = 0
     last_stat = 0
     for ix, word in enumerate(words):
+        if word[0] == '':
+            continue
         tiling.engrave(word)
         if tiling.fill_ratio > last_stat:
             last_stat = tiling.fill_ratio
