@@ -23,7 +23,7 @@ PDF_FONT_SIZE = 150 / RADIUS
 PDF_TOP = 29.7 * cm
 PDF_LEFT = PDF_GRID_CENTER - sqrt(3) * RADIUS * PDF_HEX_SIDE_LEN
 
-DIRECTIONS = ((0,-1,1), (1,-1,0), (1,0,-1), (0,1,-1), (-1,1,0), (-1,0,1))
+DIRECTIONS = ((0, -1, 1), (1, -1, 0), (1, 0, -1), (0, 1, -1), (-1, 1, 0), (-1, 0, 1))
 
 WORDPOOL_INGREDIENTS = [
     {'size': 0, 're': '[ÕÜÄÖ]'},
