@@ -64,15 +64,24 @@ class Cube:
     def max_word_length(self, radius):
         return (radius + 1) + self.abs_max - self.abs_min  #
 
-    def engrave(self, dir, word):
+    def test(self, dir, word):
         if self.__letter not in (PLACEHOLDER, word[0]):
             # print(word[0], 'cant fit to', self.__letter)
             return False
+        matches = 0
         if len(word) > 1:
-            if self.links[dir].engrave(dir, word[1:]) == False:
+            matches = self.links[dir].test(dir, word[1:])
+            if matches == False:
                 return False
+        if self.__letter == word[0]:
+            matches += 1
+
+        return matches
+
+    def engrave(self, dir, word):
+        if len(word) > 1:
+            self.links[dir].engrave(dir, word[1:])
         self.__letter = word[0]
-        return True
 
     def link(self, dir_label, other_cube):
         self.links.setdefault(dir_label, other_cube)
@@ -116,10 +125,16 @@ class Cube:
 class Tiling:
     def __init__(self, radius):
         self.radius = radius
+        self.size = 3 * (self.radius + 1) ** 2 - 3 * (self.radius + 1) + 1
+        self.filled_cube_count = 0
         self.cubes = {}
         centerCube = self.cubes.setdefault((0, 0, 0), Cube(0, 0, 0))
         centerCube.grow(self.cubes, self.radius)
+        self.empty_cubes = []
+        for coord in self.cubes.keys():
+            self.empty_cubes.append(coord)
         self.words = []
+        self.letters = {}
 
     def __str__(self):
         coords = [
@@ -135,6 +150,13 @@ class Tiling:
             for coord in self.cubes
         }
 
+    @property
+    def fill_ratio(self):
+        return self.filled_cube_count / self.size
+
+    def fillable_word(self):
+        return ''
+
     def max_word_length(self, cube, direction=None):
         if direction:
             # print(cube, direction)
@@ -147,11 +169,35 @@ class Tiling:
         else:
             return (self.radius + 1) + cube.abs_max - cube.abs_min  #
 
+    def engrave_at(self, coord, dir_label, word):
+        cube = self.cubes(coord)
+        if cube.test(dir_label, word[0]):
+            cube.engrave(dir_label, word[0])
+            print('Engraved', word[0], 'to', cube.coords, '->', dir_label)
+            self.store(word)
+            self.filled_cube_count += len(word[0]) - matches
+
     def engrave(self, word, hint=None):
+        # First word gets just placed on board
+        # next words have to overlap with at least one existing word
+        print('  trying', word[0])
+        qualify = False
+        first_word = False
+        if len(self.words) == 0:
+            # print('first word', word[0])
+            qualify = True
+            first_word = True
+        else:
+            for letter in word[0]:
+                if letter in self.letters:
+                    qualify = True
+        if not qualify:
+            # print(' - skipping', word[0], self.letters)
+            return
+
         cubes = list(self.cubes.values())
         shuffle(cubes)
         for cube in cubes:
-            # print('\nTry', cube)
             if self.max_word_length(cube) < len(word):
                 continue
             directions = list(DIRECTIONS.items())
@@ -161,10 +207,17 @@ class Tiling:
                 max_word_length = self.max_word_length(cube, direction)
                 if max_word_length < len(word[0]):
                     continue
-                if cube.engrave(dir_label, word[0]):
+                # print('testing', word[0], cube.coords, dir_label)
+                matches = cube.test(dir_label, word[0])
+                if matches > (-1 if first_word else 0):
+                    cube.engrave(dir_label, word[0])
                     print('Engraved', word[0], 'to', cube.coords, '->', dir_label)
                     self.store(word)
-                return
+                    self.filled_cube_count += len(word[0]) - matches
+                    return
 
     def store(self, word):
         self.words.append(word)
+        for letter in word[0]:
+            self.letters.setdefault(letter, 0)
+            self.letters[letter] += 1
