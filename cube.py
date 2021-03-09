@@ -65,17 +65,19 @@ class Cube:
         return (radius + 1) + self.abs_max - self.abs_min  #
 
     def test(self, dir, word):
+        # print('test', word, 'to', self.__letter, self.__letter == word[0])
         if self.__letter not in (PLACEHOLDER, word[0]):
             # print(word[0], 'cant fit to', self.__letter)
-            return False
+            return -1
         matches = 0
         if len(word) > 1:
             matches = self.links[dir].test(dir, word[1:])
-            if matches == False:
-                return False
+            if matches == -1:
+                return -1
         if self.__letter == word[0]:
             matches += 1
 
+        # print('test of', word, 'to', self.__letter, 'gave', matches, 'matches')
         return matches
 
     def engrave(self, dir, word):
@@ -171,16 +173,17 @@ class Tiling:
 
     def engrave_at(self, coord, dir_label, word):
         cube = self.cubes(coord)
-        if cube.test(dir_label, word[0]):
+        matches = cube.test(dir_label, word[0])
+        if matches > 0:
             cube.engrave(dir_label, word[0])
-            print('Engraved', word[0], 'to', cube.coords, '->', dir_label)
+            # print('Engraved', word[0], 'to', cube.coords, '->', dir_label)
             self.store(word)
             self.filled_cube_count += len(word[0]) - matches
 
     def engrave(self, word, hint=None):
         # First word gets just placed on board
         # next words have to overlap with at least one existing word
-        print('  trying', word[0])
+        # print('  trying', word[0])
         qualify = False
         first_word = False
         if len(self.words) == 0:
@@ -209,9 +212,10 @@ class Tiling:
                     continue
                 # print('testing', word[0], cube.coords, dir_label)
                 matches = cube.test(dir_label, word[0])
+                # print('test for', word[0], cube.coords, dir_label, 'resulted', matches, 'matches')
                 if matches > (-1 if first_word else 0):
                     cube.engrave(dir_label, word[0])
-                    print('Engraved', word[0], 'to', cube.coords, '->', dir_label)
+                    # print('Engraved', word[0], 'to', cube.coords, '->', dir_label)
                     self.store(word)
                     self.filled_cube_count += len(word[0]) - matches
                     return
