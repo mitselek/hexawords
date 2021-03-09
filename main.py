@@ -12,7 +12,7 @@ from reportlab.pdfgen.canvas import Canvas
 
 from cube import Tiling
 
-GRID_RADIUS = 4
+GRID_RADIUS = 6
 GRID_FILL_RATIO = 0.95
 
 BOOKLET_PAGES = 12

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from random import randint, shuffle, sample, choice
 import json
+from random import shuffle
 
 DIRECTIONS = {
     "rg": {"dr": +1, "dg": -1, "db": 0},
@@ -22,7 +22,10 @@ class Cube:
         # print('New cube at', str(self))
 
     def __str__(self):
-        return str({'coords': self.__coords, 'links': [(dir, cube.coords) for dir, cube in self.__links.items()]})
+        return str({
+            'coords': self.__coords,
+            'links': [(dir_label, cube.coords) for dir_label, cube in self.__links.items()]
+        })
         # return str(self.r) + ',' + str(self.g) + ',' + str(self.b)
 
     @property
@@ -46,7 +49,7 @@ class Cube:
         return max(abs(self.__coords['r']), abs(self.__coords['g']), abs(self.__coords['b']))
 
     @property
-    def numlinks(self):
+    def num_links(self):
         return len(self.__links)
 
     @property
@@ -64,14 +67,14 @@ class Cube:
     def max_word_length(self, radius):
         return (radius + 1) + self.abs_max - self.abs_min  #
 
-    def test(self, dir, word):
+    def test(self, dir_label, word):
         # print('test', word, 'to', self.__letter, self.__letter == word[0])
         if self.__letter not in (PLACEHOLDER, word[0]):
             # print(word[0], 'cant fit to', self.__letter)
             return -1
         matches = 0
         if len(word) > 1:
-            matches = self.links[dir].test(dir, word[1:])
+            matches = self.links[dir_label].test(dir_label, word[1:])
             if matches == -1:
                 return -1
         if self.__letter == word[0]:
@@ -80,9 +83,9 @@ class Cube:
         # print('test of', word, 'to', self.__letter, 'gave', matches, 'matches')
         return matches
 
-    def engrave(self, dir, word):
+    def engrave(self, dir_label, word):
         if len(word) > 1:
-            self.links[dir].engrave(dir, word[1:])
+            self.links[dir_label].engrave(dir_label, word[1:])
         self.__letter = word[0]
 
     def link(self, dir_label, other_cube):
@@ -115,10 +118,10 @@ class Cube:
             next_cube = cubes[(r, g, b)]
             # print('linking', dir_label, 'with', (x, y, b))
             self.link(dir_label=dir_label, other_cube=next_cube)
-            cntr_dir_label = dir_label[1] + dir_label[0]
-            next_cube.link(dir_label=cntr_dir_label, other_cube=self)
+            contra_dir_label = dir_label[1] + dir_label[0]
+            next_cube.link(dir_label=contra_dir_label, other_cube=self)
 
-            if next_cube.numlinks == 1:
+            if next_cube.num_links == 1:
                 next_cube.grow(cubes, radius)
 
         return
@@ -130,8 +133,8 @@ class Tiling:
         self.size = 3 * (self.radius + 1) ** 2 - 3 * (self.radius + 1) + 1
         self.filled_cube_count = 0
         self.cubes = {}
-        centerCube = self.cubes.setdefault((0, 0, 0), Cube(0, 0, 0))
-        centerCube.grow(self.cubes, self.radius)
+        center_cube = self.cubes.setdefault((0, 0, 0), Cube(0, 0, 0))
+        center_cube.grow(self.cubes, self.radius)
         self.empty_cubes = []
         for coord in self.cubes.keys():
             self.empty_cubes.append(coord)
