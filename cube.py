@@ -135,9 +135,6 @@ class Tiling:
         self.cubes = {}
         center_cube = self.cubes.setdefault((0, 0, 0), Cube(0, 0, 0))
         center_cube.grow(self.cubes, self.radius)
-        self.empty_cubes = []
-        for coord in self.cubes.keys():
-            self.empty_cubes.append(coord)
         self.words = []
         self.letters = {}
 
@@ -158,6 +155,11 @@ class Tiling:
     @property
     def fill_ratio(self):
         return self.filled_cube_count / self.size
+
+    @property
+    def empty_cubes(self):
+        empties = dict(filter(lambda cube: cube[1].letter == PLACEHOLDER, self.cubes.items()))
+        return sorted(empties, key=lambda tup: (tup[2], tup[0]))
 
     def fillable_word(self):
         return ''

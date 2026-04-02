@@ -12,8 +12,9 @@ from reportlab.pdfgen.canvas import Canvas
 
 from cube import Tiling
 
-GRID_RADIUS = 6
-GRID_FILL_RATIO = 0.95
+GRID_RADIUS = 8
+GRID_FILL_RATIO = 0.8
+GRID_MAX_EMPTY_LETTERS = 12
 
 BOOKLET_PAGES = 12
 BOOKLET_TITLE = 'segadik'
@@ -30,7 +31,8 @@ PDF_PRINT_COORDS = False
 DIRECTIONS = ((0, -1, 1), (1, -1, 0), (1, 0, -1), (0, 1, -1), (-1, 1, 0), (-1, 0, 1))
 
 WORDPOOL_INGREDIENTS = [
-    {'size': 1000, 're': '.'},
+    {'size': 1000, 're': '.\{4,7\}'},
+    {'size': 100, 're': '.\{7,9\}'},
     # {'size': 10000, 're': '[ÕÜÄÖ]'},
 ]
 
@@ -39,18 +41,23 @@ MAX_WORD_LENGTH = 2 * GRID_RADIUS + 1
 FIRST_WORD_LENGTH = 2 * GRID_RADIUS
 
 
+def read_words(re, cnt):
+    shell_str = "cat et/4.txt | grep '^.\{" + str(MIN_WORD_LENGTH) + "," + str(MAX_WORD_LENGTH) + "\}$' | grep '" + \
+                re + "' | sort -R | head -" + str(cnt)
+    stream = os.popen(shell_str)
+    word_chain = ''
+    for word in stream.readlines():
+        word_chain += word
+    return  [(word.rstrip("\n"), word.rstrip("\n")) for word in word_chain.rstrip("\n").split('\n')]
+
+
 def new_words():
     words = []
     for wp in WORDPOOL_INGREDIENTS:
-        shell_str = "cat et/4.txt | grep '^.\{" + str(MIN_WORD_LENGTH) + "," + str(MAX_WORD_LENGTH) + "\}$' | grep '" + wp['re'] + "' | sort -R | head -" + str(wp['size'])
-        # print(shell_str)
-        stream = os.popen(shell_str)
-        wordchain = ''
-        for word in stream.readlines():
-            wordchain += word
-        words.extend([(word.rstrip("\n"), word.rstrip("\n")) for word in wordchain.rstrip("\n").split('\n')])
+        words.extend(read_words(wp['re'], wp['size']))
     shuffle(words)
     return words
+
 
 def cartesian(hex):
     r, g, b = hex
@@ -61,11 +68,13 @@ def cartesian(hex):
 
 canvas = Canvas('booklet_' + BOOKLET_TITLE + '.pdf', pagesize=A4)
 
-for pagenr in range(BOOKLET_PAGES   ):
+solutions = {}
+for page_nr in range(BOOKLET_PAGES):
     canvas.setFont("Times-Roman", 12)
-    canvas.drawString(1 * cm, PDF_TOP - 1 * cm, 'Micheleki sõnaheksadix, 2021   ' + str(pagenr + 1) + '/' + str(BOOKLET_PAGES))
+    canvas.drawString(1 * cm, PDF_TOP - 1 * cm,
+                      'Micheleki sõnaheksadix, 2021   ' + str(page_nr + 1) + '/' + str(BOOKLET_PAGES))
 
-    print('Page', pagenr + 1, 'fill ratio:', end = '')
+    print('Page', page_nr + 1, 'fill ratio:', end='')
     while True:
         tiling = Tiling(GRID_RADIUS)
         words = new_words()
@@ -82,38 +91,40 @@ for pagenr in range(BOOKLET_PAGES   ):
                 stat_line_nr += 1
                 if PDF_PRINT_COORDS:
                     canvas.drawString(1 * cm, PDF_TOP - 3 * cm - stat_line_nr * 0.5 * cm,
-                    (str(floor(ix / len(words) * 100))).rjust(2) + ': ' + str(floor(tiling.fill_ratio * 100)).ljust(2) + ' ' + word[0])
+                                      (str(floor(ix / len(words) * 100))).rjust(2) + ': ' + str(
+                                          floor(tiling.fill_ratio * 100)).ljust(2) + ' ' + word[0])
                 # else:
                 #     print(
                 #         str(floor(ix / len(words) * 100)).rjust(2) + ': ' +
                 #         str(floor(tiling.fill_ratio * 100)).ljust(2) + ' ' + word[0])
 
-        print(' ', str(floor(tiling.fill_ratio * 100)) + '%', end = '')
-        if tiling.fill_ratio > GRID_FILL_RATIO:
+        print(' ', str(floor(tiling.fill_ratio * 100)) + '%', end='')
+        if tiling.fill_ratio > GRID_FILL_RATIO and len(tiling.empty_cubes) <= GRID_MAX_EMPTY_LETTERS:
             break
     print('.')
 
-    # while tiling.fill_ratio < 0.8:
-    # if tiling.fill_ratio < 0.8:
-    #     coord, dir, re = tiling.fillable_word
-    #     shell_str = "cat et/4.txt | grep '^" + re + "$' | sort -R | head -1"
-    #     stream = os.popen(shell_str, 'r', 0)
-    #     word = stream.read()
-    #     tiling.engrave_at(coord, dir, (word, word))
+    solution = tiling.empty_cubes
+    word = '*'.rjust(len(solution), '*')
+    if len(solution) >= 4:
+        word = read_words('^.\{' + str(len(solution)) + '\}$', 1)[0][0]
 
-    for (coords, letter) in tiling.tiles.items():
-        cart = cartesian(coords)
+    solutions[page_nr + 1] = word
+    for c in tiling.empty_cubes:
+        tiling.cubes[c].engrave('rg', word[0])
+        word = word[1:]
+
+    for (coordinates, letter) in tiling.tiles.items():
+        cart = cartesian(coordinates)
         x, y = cart
         if PDF_PRINT_COORDS:
             if letter == '-':
                 canvas.setFont("Courier", PDF_FONT_SIZE / 6)
-                canvas.drawString(x, y, ','.join([str(c) for c in coords]))
+                canvas.drawString(x, y, ','.join([str(c) for c in coordinates]))
             else:
                 canvas.setFont("Courier", PDF_FONT_SIZE / 6)
-                canvas.drawString(x, y - PDF_FONT_SIZE / 6, ','.join([str(c) for c in coords]))
+                canvas.drawString(x, y - PDF_FONT_SIZE / 6, ','.join([str(c) for c in coordinates]))
         canvas.setFont("Courier", PDF_FONT_SIZE)
         canvas.drawString(x, y, letter.upper())
-
 
     canvas.setFont("Courier", PDF_FONT_SIZE * PDF_HINT_FONT_SIZE_RATIO)
     first_line_y = 8 * cm
@@ -125,7 +136,7 @@ for pagenr in range(BOOKLET_PAGES   ):
     lines = []
     line = ''
     # lines.append(line)
-    for (word, hint) in tiling.words:
+    for (word, hint) in sorted(tiling.words, key=lambda tup: tup[0]):
         if len(line) == 0:
             line += word
         elif len(line) + 2 + len(word) > max_letters_on_line:
@@ -142,6 +153,9 @@ for pagenr in range(BOOKLET_PAGES   ):
         # print(ix, line)
         canvas.drawString(PDF_LEFT, first_line_y - ix * line_height * cm, line)
 
-    canvas.showPage() # saves a page to PDF and gets ready for a new one
+    canvas.showPage()  # saves a page to PDF and gets ready for a new one
+
+for nr in solutions:
+    canvas.drawString(PDF_LEFT, (29 - nr * line_height) * cm, str(nr) + ': ' + solutions[nr])
 
 canvas.save()
